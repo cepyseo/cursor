@@ -122,6 +122,27 @@ pause</code></pre>
 		<p><i class="far fa-copyright"></i> 2024 CursorCrack & AideCrack - Tüm hakları saklıdır.</p>
 	</footer>
 
+	<div id="welcomeModal" class="modal">
+		<div class="modal-content">
+			<div class="modal-header">
+				<i class="fas fa-rocket"></i>
+				<h2>CursorCrack & AideCrack'e Hoş Geldiniz!</h2>
+			</div>
+			<div class="modal-body">
+				<p>Bu araç ile:</p>
+				<ul>
+					<li><i class="fas fa-check"></i> Telemetry ID'leri oluşturabilir</li>
+					<li><i class="fas fa-check"></i> Cihaz ID'nizi değiştirebilir</li>
+					<li><i class="fas fa-check"></i> Tek tıkla kopyalama yapabilirsiniz</li>
+				</ul>
+				<p class="note"><i class="fas fa-info-circle"></i> Başlamak için aşağıdaki butona tıklayın.</p>
+			</div>
+			<button onclick="closeModal()" class="modal-button">
+				<i class="fas fa-arrow-right"></i> Başla
+			</button>
+		</div>
+	</div>
+
 	<script>
 		function generateRandomHex(length) {
 			const chars = '0123456789abcdef';
@@ -140,21 +161,269 @@ pause</code></pre>
 			});
 		}
 
+		async function generateIds(type) {
+			const button = document.querySelector(`button[onclick="generate${type}Ids()"]`);
+			const oldContent = button.innerHTML;
+			button.innerHTML = '<div class="loading"></div>';
+			button.disabled = true;
+
+			await new Promise(resolve => setTimeout(resolve, 500));
+
+			const machineId = generateRandomHex(64);
+			const sqmId = '{' + generateUUID().toUpperCase() + '}';
+			const devDeviceId = generateUUID();
+
+			document.getElementById(`${type.toLowerCase()}MachineId`).innerHTML = `
+				<span>${machineId}</span>
+				<button onclick="copyToClipboard('${machineId}')" class="copy-btn" title="ID'yi Kopyala">
+					<i class="fas fa-copy"></i>
+					<span class="copy-text">Kopyala</span>
+				</button>
+			`;
+			document.getElementById(`${type.toLowerCase()}SqmId`).innerHTML = `
+				<span>${sqmId}</span>
+				<button onclick="copyToClipboard('${sqmId}')" class="copy-btn" title="ID'yi Kopyala">
+					<i class="fas fa-copy"></i>
+					<span class="copy-text">Kopyala</span>
+				</button>
+			`;
+			document.getElementById(`${type.toLowerCase()}DevDeviceId`).innerHTML = `
+				<span>${devDeviceId}</span>
+				<button onclick="copyToClipboard('${devDeviceId}')" class="copy-btn" title="ID'yi Kopyala">
+					<i class="fas fa-copy"></i>
+					<span class="copy-text">Kopyala</span>
+				</button>
+			`;
+
+			button.innerHTML = oldContent;
+			button.disabled = false;
+		}
+
+		function copyToClipboard(text) {
+			navigator.clipboard.writeText(text).then(() => {
+				const btn = event.currentTarget;
+				btn.classList.add('success');
+				const icon = btn.querySelector('i');
+				const text = btn.querySelector('.copy-text');
+				icon.className = 'fas fa-check';
+				text.textContent = 'Kopyalandı!';
+				
+				setTimeout(() => {
+					btn.classList.remove('success');
+					icon.className = 'fas fa-copy';
+					text.textContent = 'Kopyala';
+				}, 1500);
+				
+				showToast('Kopyalandı!');
+			});
+		}
+
+		function showToast(message) {
+			const toast = document.createElement('div');
+			toast.className = 'toast';
+			toast.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+			document.body.appendChild(toast);
+			
+			requestAnimationFrame(() => {
+				toast.classList.add('show');
+				setTimeout(() => {
+					toast.classList.remove('show');
+					setTimeout(() => {
+						document.body.removeChild(toast);
+					}, 300);
+				}, 2000);
+			});
+		}
+
 		function generateCursorIds() {
-			document.getElementById('cursorMachineId').textContent = generateRandomHex(64);
-			document.getElementById('cursorSqmId').textContent = '{' + generateUUID().toUpperCase() + '}';
-			document.getElementById('cursorDevDeviceId').textContent = generateUUID();
+			generateIds('Cursor');
 		}
 
 		function generateAideIds() {
-			document.getElementById('aideMachineId').textContent = generateRandomHex(64);
-			document.getElementById('aideSqmId').textContent = '{' + generateUUID().toUpperCase() + '}';
-			document.getElementById('aideDevDeviceId').textContent = generateUUID();
+			generateIds('Aide');
 		}
 
-		// Generate initial IDs for both generators
+		// Add styles for toast and copy buttons
+		const style = document.createElement('style');
+		style.textContent = `
+			.modal {
+				display: none;
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background-color: rgba(0, 0, 0, 0.7);
+				z-index: 1000;
+				opacity: 0;
+				transition: opacity 0.3s ease;
+			}
+
+			.modal.show {
+				opacity: 1;
+			}
+
+			.modal-content {
+				position: relative;
+				background-color: var(--card-bg);
+				margin: 15% auto;
+				padding: 30px;
+				width: 90%;
+				max-width: 500px;
+				border-radius: 15px;
+				border: 1px solid var(--border);
+				box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+				transform: translateY(-50px);
+				opacity: 0;
+				transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			}
+
+			.modal.show .modal-content {
+				transform: translateY(0);
+				opacity: 1;
+			}
+
+			.modal-header {
+				display: flex;
+				align-items: center;
+				gap: 15px;
+				margin-bottom: 20px;
+			}
+
+			.modal-header i {
+				font-size: 2em;
+				color: var(--primary);
+			}
+
+			.modal-body {
+				margin: 20px 0;
+			}
+
+			.modal-body ul {
+				list-style: none;
+				margin: 15px 0;
+			}
+
+			.modal-body li {
+				margin: 10px 0;
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+
+			.modal-body li i {
+				color: var(--success);
+			}
+
+			.modal-body .note {
+				margin-top: 20px;
+				color: var(--text-secondary);
+				font-size: 0.9em;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+
+			.modal-button {
+				background-color: var(--primary);
+				color: white;
+				border: none;
+				padding: 12px 24px;
+				border-radius: 20px;
+				cursor: pointer;
+				font-weight: bold;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				margin: 0 auto;
+				transition: all 0.3s ease;
+			}
+
+			.modal-button:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 4px 15px rgba(29, 161, 242, 0.3);
+			}
+
+			.modal-button:active {
+				transform: scale(0.95);
+			}
+
+			.toast {
+				position: fixed;
+				bottom: 20px;
+				left: 50%;
+				transform: translateX(-50%) translateY(100px);
+				background-color: var(--success);
+				color: white;
+				padding: 12px 24px;
+				border-radius: 20px;
+				opacity: 0;
+				transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+				z-index: 1000;
+			}
+
+			.toast.show {
+				transform: translateX(-50%) translateY(0);
+				opacity: 1;
+			}
+
+			.copy-btn {
+				background: none;
+				border: none;
+				color: var(--primary);
+				cursor: pointer;
+				padding: 4px 8px;
+				border-radius: 4px;
+				transition: all 0.3s ease;
+			}
+
+			.copy-btn:hover {
+				background-color: var(--hover-bg);
+				transform: translateY(-2px);
+			}
+
+			.loading {
+				display: inline-block;
+				width: 20px;
+				height: 20px;
+				border: 3px solid rgba(255,255,255,0.3);
+				border-radius: 50%;
+				border-top-color: white;
+				animation: spin 1s ease-in-out infinite;
+			}
+
+			@keyframes spin {
+				to { transform: rotate(360deg); }
+			}
+		`;
+		document.head.appendChild(style);
+
+		// Generate initial IDs
 		generateCursorIds();
 		generateAideIds();
+
+		// Welcome Modal Functions
+		function showWelcomeModal() {
+			if (!localStorage.getItem('welcomeShown')) {
+				const modal = document.getElementById('welcomeModal');
+				modal.style.display = 'block';
+				requestAnimationFrame(() => {
+					modal.classList.add('show');
+				});
+				localStorage.setItem('welcomeShown', 'true');
+			}
+		}
+
+		function closeModal() {
+			const modal = document.getElementById('welcomeModal');
+			modal.classList.remove('show');
+			setTimeout(() => {
+				modal.style.display = 'none';
+			}, 300);
+		}
+
+		// Show modal on page load
+		window.addEventListener('load', showWelcomeModal);
 	</script>
 </body>
 </html>
